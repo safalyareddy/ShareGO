@@ -9,6 +9,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isSignup = false;
+  bool _showLoginOtp = false;
 
   // Signup controllers
   final _signupFormKey = GlobalKey<FormState>();
@@ -23,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   int _signupResendSeconds = 0;
 
   // Login controllers
-  final _loginPhoneController = TextEditingController();
+  final _loginEmailController = TextEditingController();
   final List<TextEditingController> _loginOtpControllers = List.generate(6, (_) => TextEditingController());
   bool _loginOtpSent = false;
   int _loginResendSeconds = 0;
@@ -72,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Logo and title
@@ -180,14 +182,14 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _signupNameController,
-            style: const TextStyle(color: Colors.black),
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
             decoration: _inputDecoration('Full Name'),
             validator: (value) => value!.isEmpty ? "Enter your name" : null,
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _signupEmailController,
-            style: const TextStyle(color: Colors.black),
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
             decoration: _inputDecoration('Email'),
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
@@ -202,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _signupPhoneController,
-            style: const TextStyle(color: Colors.black),
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
             decoration: _inputDecoration('Phone Number'),
             keyboardType: TextInputType.phone,
             validator: (value) => value!.isEmpty ? "Enter your phone number" : null,
@@ -213,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _signupHostelController,
-                  style: const TextStyle(color: Colors.black),
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
                   decoration: _inputDecoration('Hostel'),
                   validator: (value) => value!.isEmpty ? "Enter hostel" : null,
                 ),
@@ -222,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Expanded(
                 child: TextFormField(
                   controller: _signupRoomController,
-                  style: const TextStyle(color: Colors.black),
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
                   decoration: _inputDecoration('Room No.'),
                   validator: (value) => value!.isEmpty ? "Enter room no." : null,
                 ),
@@ -234,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
             value: _signupGender,
             decoration: _inputDecoration('Gender'),
             dropdownColor: Colors.grey[200],
-            style: const TextStyle(color: Colors.black),
+            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
             items: ['Male', 'Female'].map((gender) => DropdownMenuItem(value: gender, child: Text(gender))).toList(),
             onChanged: (val) => setState(() => _signupGender = val!),
           ),
@@ -258,6 +260,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       filled: true,
                       fillColor: Colors.grey[200],
                     ),
+                    onChanged: (val) {
+                      if (val.length == 1 && i < 5) {
+                        FocusScope.of(context).nextFocus();
+                      } else if (val.isEmpty && i > 0) {
+                        FocusScope.of(context).previousFocus();
+                      }
+                    },
                   ),
                 ),
               )),
@@ -293,12 +302,24 @@ class _LoginScreenState extends State<LoginScreen> {
               if (_signupFormKey.currentState?.validate() ?? false) {
                 final otp = _signupOtpControllers.map((c) => c.text).join();
                 if (otp.length != 6) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter 6-digit OTP')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Enter 6-digit OTP'),
+                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
                   return;
                 }
-                Navigator.pushReplacementNamed(context, '/home');
+                Navigator.pushReplacementNamed(context, '/createRide');
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Please fill all fields'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
@@ -322,66 +343,145 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         const Text('Login', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black)),
         const SizedBox(height: 8),
-        const Text('Enter your phone number to continue', style: TextStyle(color: Colors.grey)),
+        const Text('Enter your VIT student email to continue', style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: _loginPhoneController,
-          style: const TextStyle(color: Colors.black),
-          decoration: _inputDecoration('Phone Number'),
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 16),
-        if (_loginOtpSent) ...[
+        if (!_showLoginOtp) ...[
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _loginEmailController,
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                  decoration: _inputDecoration('Email'),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Enter your email";
+                    } else if (!value.endsWith('@vitstudent.ac.in')) {
+                      return "Only VIT student email allowed";
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              if (_loginEmailController.text.isEmpty || !_loginEmailController.text.endsWith('@vitstudent.ac.in')) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Enter valid VIT student email'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+              setState(() => _showLoginOtp = true);
+              _sendLoginOTP();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              elevation: 0,
+            ),
+            child: const Text('Send OTP'),
+          ),
+        ] else ...[
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.green),
+                onPressed: () => setState(() => _showLoginOtp = false),
+                tooltip: 'Back to credentials',
+              ),
+              const SizedBox(width: 8),
+              const Text('Enter OTP', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+            ],
+          ),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(6, (i) => SizedBox(
-              width: 40,
-              child: TextField(
-                controller: _loginOtpControllers[i],
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                maxLength: 1,
-                style: const TextStyle(color: Colors.black),
-                decoration: InputDecoration(
-                  counterText: '',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey[200],
+            children: List.generate(6, (i) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: SizedBox(
+                width: 40,
+                child: TextField(
+                  controller: _loginOtpControllers[i],
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 1,
+                  style: const TextStyle(color: Colors.black),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                  ),
+                  onChanged: (val) {
+                    if (val.length == 1 && i < 5) {
+                      FocusScope.of(context).nextFocus();
+                    } else if (val.isEmpty && i > 0) {
+                      FocusScope.of(context).previousFocus();
+                    }
+                  },
                 ),
               ),
             )),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           _loginResendSeconds > 0
             ? Text('Resend OTP in $_loginResendSeconds s', style: const TextStyle(color: Colors.grey))
             : TextButton(
                 onPressed: _sendLoginOTP,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 child: const Text('Resend OTP'),
               ),
-        ] else ...[
+          const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: _sendLoginOTP,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Send OTP'),
+            onPressed: () {
+              final otp = _loginOtpControllers.map((c) => c.text).join();
+              if (_loginEmailController.text.isEmpty || !(_loginEmailController.text.endsWith('@vitstudent.ac.in'))) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Enter valid VIT student email'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+              if (otp.length != 6) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Enter 6-digit OTP'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                return;
+              }
+              Navigator.pushReplacementNamed(context, '/createRide');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              elevation: 0,
+            ),
+            child: const Text("Login"),
           ),
         ],
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: () {
-            final otp = _loginOtpControllers.map((c) => c.text).join();
-            if (otp.length != 6) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter 6-digit OTP')));
-              return;
-            }
-            Navigator.pushReplacementNamed(context, '/home');
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-            textStyle: const TextStyle(fontSize: 16),
-          ),
-          child: const Text("Login"),
-        ),
       ],
     );
   }
