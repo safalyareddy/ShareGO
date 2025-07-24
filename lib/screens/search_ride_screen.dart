@@ -147,6 +147,7 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
             color: _selectedTab == index ? Colors.green : Colors.grey[200],
             borderRadius: BorderRadius.circular(8),
           ),
+          
           child: Center(
             child: Text(
               label,
