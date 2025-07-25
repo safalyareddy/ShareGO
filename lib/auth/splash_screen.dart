@@ -1,5 +1,6 @@
+
 import 'package:flutter/material.dart';
-import 'package:sharego/auth/login_screen.dart';
+import 'package:sharego/auth/login_screen.dart'; // Ensure this path is correct
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,25 +28,30 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.white, // or a custom splash color
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Use a modern outlined car icon as logo
-            Icon(Icons.directions_car_filled, size: 90, color: Colors.green),
-            const SizedBox(height: 30),
+            // You can use your own logo here
+            Image.asset(
+              'assets/logo.png',
+              height: 120,
+              width: 120,
+            ),
+            const SizedBox(height: 20),
             const Text(
-              'ShareGo',
-              style: TextStyle(fontSize: 32, color: Colors.black, fontWeight: FontWeight.bold, letterSpacing: 2),
+              'Welcome to ShareGo',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Connecting Hostel Students Smartly',
-              style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+            const CircularProgressIndicator(
+              color: Colors.black,
             ),
-            const SizedBox(height: 30),
-            const CircularProgressIndicator(color: Colors.green),
           ],
         ),
       ),

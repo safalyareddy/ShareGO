@@ -1,253 +1,214 @@
+// lib/screens/create_ride_screen.dart
 import 'package:flutter/material.dart';
 
 class CreateRideScreen extends StatefulWidget {
-  const CreateRideScreen({Key? key}) : super(key: key);
+  const CreateRideScreen({super.key});
 
   @override
   State<CreateRideScreen> createState() => _CreateRideScreenState();
 }
 
 class _CreateRideScreenState extends State<CreateRideScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _fromController = TextEditingController();
-  final TextEditingController _toController = TextEditingController();
+  final TextEditingController _originController = TextEditingController();
+  final TextEditingController _destinationController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
-  final TextEditingController _seatsController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _vehicleController = TextEditingController();
+  int _seats = 1; // Default number of seats
+
+  // Function to show date picker, only allowing future dates
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(), // Only allow today onward
+      lastDate: DateTime.now().add(const Duration(days: 365)), // Up to a year
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _dateController.text = "${picked.day}/${picked.month}/${picked.year}";
+      });
+    }
+  }
+
+  // Function to show time picker
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.green,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _timeController.text = picked.format(context);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _originController.dispose();
+    _destinationController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
-        title: const Text("ShareGO", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('Create Ride'),
         backgroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0.5,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text('Create Ride'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/searchRide');
-                    },
-                    icon: const Icon(Icons.search, color: Colors.green),
-                    label: const Text('Find Rides', style: TextStyle(color: Colors.green)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.green,
-                      side: const BorderSide(color: Colors.green, width: 2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Offer a Ride', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
-                      const SizedBox(height: 8),
-                      const Text('Fill in the details below to create your ride', style: TextStyle(color: Colors.grey)),
-                      const SizedBox(height: 24),
-                      _buildForm(context),
-                    ],
-                  ),
-                ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Origin
+            const Text("Origin", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _originController,
+              decoration: InputDecoration(
+                hintText: "Enter origin location",
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+            const SizedBox(height: 16),
 
-  Widget _buildForm(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextFormField(
-            controller: _fromController,
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-            decoration: InputDecoration(
-              labelText: 'From',
-              labelStyle: const TextStyle(color: Colors.grey),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            // Destination
+            const Text("Destination", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _destinationController,
+              decoration: InputDecoration(
+                hintText: "Enter destination",
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
             ),
-            validator: (val) => val == null || val.isEmpty ? 'Enter starting point' : null,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _toController,
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-            decoration: InputDecoration(
-              labelText: 'To',
-              labelStyle: const TextStyle(color: Colors.grey),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            const SizedBox(height: 16),
+
+            // Date Picker
+            const Text("Date", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _dateController,
+              readOnly: true,
+              onTap: () => _selectDate(context),
+              decoration: InputDecoration(
+                hintText: "Select date",
+                suffixIcon: const Icon(Icons.calendar_today),
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
             ),
-            validator: (val) => val == null || val.isEmpty ? 'Enter destination' : null,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _dateController,
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                  decoration: InputDecoration(
-                    labelText: 'Date',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Enter date' : null,
-                ),
+            const SizedBox(height: 16),
+
+            // Time Picker
+            const Text("Time", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _timeController,
+              readOnly: true,
+              onTap: () => _selectTime(context),
+              decoration: InputDecoration(
+                hintText: "Select time",
+                suffixIcon: const Icon(Icons.access_time),
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _timeController,
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                  decoration: InputDecoration(
-                    labelText: 'Time',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Enter time' : null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _seatsController,
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Seats',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Enter seats' : null,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _priceController,
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Price per seat (₹)',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  validator: (val) => val == null || val.isEmpty ? 'Enter price' : null,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _vehicleController,
-            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
-            decoration: InputDecoration(
-              labelText: 'Vehicle (e.g. Car, Auto)',
-              labelStyle: const TextStyle(color: Colors.grey),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            validator: (val) => val == null || val.isEmpty ? 'Enter vehicle' : null,
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState?.validate() ?? false) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride created!')));
-                } else {
+            const SizedBox(height: 16),
+
+            // Seats Dropdown
+            const Text("Seats Available", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: _seats,
+                  icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      _seats = newValue!;
+                    });
+                  },
+                  items: List.generate(5, (index) => index + 1)
+                      .map<DropdownMenuItem<int>>((int value) {
+                    return DropdownMenuItem<int>(
+                      value: value,
+                      child: Text('$value', style: const TextStyle(color: Colors.black)),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // In a real app, you would send this data to a backend
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Please fill all fields'),
-                      backgroundColor: Colors.red,
-                      behavior: SnackBarBehavior.floating,
-                    ),
+                    const SnackBar(content: Text('Ride Posted Successfully!')),
                   );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Post Ride', style: TextStyle(fontSize: 16)),
               ),
-              child: const Text('Create Ride'),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
